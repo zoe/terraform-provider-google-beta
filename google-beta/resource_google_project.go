@@ -321,29 +321,6 @@ func resourceGoogleProjectRead(d *schema.ResourceData, meta interface{}) error {
 		d.Set("billing_account", _ba)
 	}
 
-	// read the App Engine app, if one exists
-	// we don't have the config available for import, so we can't rely on
-	// that to read it. And honestly, we want to know if an App exists that
-	// shouldn't. So this tries to read it, sets it to empty if none exists,
-	// or sets it in state if one does exist.
-	app, err := config.clientAppEngine.Apps.Get(pid).Do()
-	if err != nil && !isGoogleApiErrorWithCode(err, 404) && !isApiNotEnabledError(err) {
-		return fmt.Errorf("Error retrieving App Engine application %q: %s", pid, err.Error())
-	} else if isGoogleApiErrorWithCode(err, 404) {
-		d.Set("app_engine", []map[string]interface{}{})
-	} else if isApiNotEnabledError(err) {
-		log.Printf("[WARN] App Engine Admin API not enabled, please enable it to read App Engine info about project %q: %s", pid, err.Error())
-		d.Set("app_engine", []map[string]interface{}{})
-	} else {
-		appBlocks, err := flattenAppEngineApp(app)
-		if err != nil {
-			return fmt.Errorf("Error serializing App Engine app: %s", err.Error())
-		}
-		err = d.Set("app_engine", appBlocks)
-		if err != nil {
-			return fmt.Errorf("Error setting App Engine application in state. This is a bug, please report it at https://github.com/terraform-providers/terraform-provider-google/issues. Error is:\n%s", err.Error())
-		}
-	}
 	return nil
 }
 
